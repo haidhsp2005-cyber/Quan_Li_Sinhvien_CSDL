@@ -12,6 +12,7 @@ Thiết kế phân tán và lập luận: [docs/PLAN.md](docs/PLAN.md).
 | Sinh dữ liệu, chia mảnh, nạp 3 trạm + `ref_central` | Xong, số dòng khớp `summary.json` |
 | `postgres_fdw` + `all_<bảng>` | Xong |
 | Q1–Q5 | Đã kiểm kết quả Q2–Q5 giống đối chứng, Q1 không Foreign Scan; chưa đóng gói thành tệp `sql/queries/` |
+| `make` từ trạng thái sạch | Đã chạy thật trong Ubuntu (WSL): `make down` rồi `make all` = 40 giây, `make check` TẤT CẢ ĐẠT (50 mục); `make q`, `delay-on/off`, `check-counts` đều chạy đúng |
 | Tách 2 máy qua LAN | Code và hướng dẫn xong, đã mô phỏng bằng IP LAN (check đạt); **chưa thử trên máy B thật** |
 | Giao diện nhập liệu (`app/entry.py`) | Xong, đã thử trên 1 máy: sinh viên, đăng ký (kể cả liên vùng), chứng chỉ jsonb (một giao dịch), thêm ngẫu nhiên N dòng, báo lỗi khi trạm mất kết nối |
 | Dashboard (`app/dash.py`) | Xong, đã thử trên 1 máy: ô từng trạm, tổng hợp so với đối chứng, nhật ký sự kiện, làm mới 2 giây. Chưa kiểm hết nhật ký lúc tắt/bật trạm |
