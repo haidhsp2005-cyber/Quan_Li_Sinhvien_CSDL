@@ -13,8 +13,9 @@ Thiết kế phân tán và lập luận: [docs/PLAN.md](docs/PLAN.md).
 | `postgres_fdw` + `all_<bảng>` | Xong |
 | Q1–Q5 | Đã kiểm kết quả Q2–Q5 giống đối chứng, Q1 không Foreign Scan; chưa đóng gói thành tệp `sql/queries/` |
 | Tách 2 máy qua LAN, `deploy.toml` | **Chưa** |
-| Giao diện nhập liệu, dashboard | **Chưa** |
-| `make check` đầy đủ (3 quy tắc đúng đắn, PK/FK), `bench`, `delay-on/off`, `entry`, `dash` | **Chưa** (hiện `make check` mới so số dòng) |
+| Giao diện nhập liệu (`app/entry.py`) | Xong, đã thử trên 1 máy: sinh viên, đăng ký (kể cả liên vùng), chứng chỉ jsonb (một giao dịch), thêm ngẫu nhiên N dòng, báo lỗi khi trạm mất kết nối |
+| Dashboard (`app/dash.py`) | Xong, đã thử trên 1 máy: ô từng trạm, tổng hợp so với đối chứng, nhật ký sự kiện, làm mới 2 giây. Chưa kiểm hết nhật ký lúc tắt/bật trạm |
+| `make check` đầy đủ (3 quy tắc đúng đắn, PK/FK), `bench`, `delay-on/off` | **Chưa** (hiện `make check` mới so số dòng; sau khi nhập thêm dòng sẽ báo FAIL vì tổng lớn hơn đối chứng — chạy lại `make data` để về trạng thái sạch) |
 
 ## Yêu cầu
 
@@ -42,6 +43,11 @@ Từng bước:
 | `make check` | So tổng số dòng `all_*` với `ref_central` |
 | `make down` | Xoá container và volume |
 
+| `make entry` | Giao diện nhập liệu http://localhost:8501 |
+| `make dash` | Dashboard http://localhost:8502 |
+
+Cài thư viện cho giao diện: `python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt`. Trạm, máy, IP, cổng cấu hình ở `deploy.toml`. Nếu cổng 5432–5434 hoặc 8501/8502 đã bị dự án khác dùng, đổi trong `docker-compose.yml`, `deploy.toml` và `Makefile`. Khi không dùng: `docker compose --profile all stop` (giữ dữ liệu).
+
 Dùng `SIZE=mini` để kiểm tra bằng mắt. Mật khẩu Postgres `cs5104` chỉ dành cho môi trường thử.
 
 Vào thử: `docker compose exec campus_a psql -U postgres -d uni` (bảng cục bộ `student`, … và `all_student`, …).
@@ -66,6 +72,9 @@ sql/schema_site.sql       lược đồ một trạm: CHECK mảnh, CHECK jsonb,
 sql/fdw_central.sql       postgres_fdw + all_<bảng>
 scripts/split.py          chia CSV theo trạm (student→home_campus, section→campus, còn lại dẫn xuất)
 scripts/gen.sh, load.sh, check_counts.sh
+app/common.py             kết nối trạm, ghi dữ liệu (jsonb + bảng quan hệ một giao dịch)
+app/entry.py, dash.py     giao diện nhập liệu và dashboard (Streamlit)
+deploy.toml               trạm → máy, IP, cổng
 docs/PLAN.md              thiết kế phân tán và kế hoạch
 ```
 

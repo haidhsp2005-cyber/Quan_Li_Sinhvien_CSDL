@@ -17,3 +17,9 @@ down:
 	COMPOSE_PROFILES=all docker compose down -v
 all: up data link check
 .PHONY: up data link check down all
+
+entry:   ## giao diện nhập liệu http://localhost:8501
+	streamlit run app/entry.py --server.port 8501
+dash:    ## dashboard http://localhost:8502
+	streamlit run app/dash.py --server.port 8502
+.PHONY: entry dash

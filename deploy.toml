@@ -1,0 +1,24 @@
+# Bảng trạm -> máy, IP, cổng. Thử nghiệm 1 máy: tất cả localhost.
+# Khi chạy 2 máy: đổi host của campus_b, campus_c thành IP máy B và machine = "B".
+[db]
+name = "uni"
+user = "postgres"
+password = "cs5104"
+
+[stations.campus_a]
+machine = "A"
+host = "localhost"
+port = 5432
+weight = 0.50
+
+[stations.campus_b]
+machine = "A"          # đổi thành "B" khi tách máy
+host = "localhost"     # IP máy B khi tách máy
+port = 5433
+weight = 0.32
+
+[stations.campus_c]
+machine = "A"          # đổi thành "B" khi tách máy
+host = "localhost"     # IP máy B khi tách máy
+port = 5434
+weight = 0.18
