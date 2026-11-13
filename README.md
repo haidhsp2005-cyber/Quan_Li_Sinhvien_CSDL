@@ -12,7 +12,7 @@ Thiết kế phân tán và lập luận: [docs/PLAN.md](docs/PLAN.md).
 | Sinh dữ liệu, chia mảnh, nạp 3 trạm + `ref_central` | Xong, số dòng khớp `summary.json` |
 | `postgres_fdw` + `all_<bảng>` | Xong |
 | Q1–Q5 | Đã kiểm kết quả Q2–Q5 giống đối chứng, Q1 không Foreign Scan; chưa đóng gói thành tệp `sql/queries/` |
-| Tách 2 máy qua LAN, `deploy.toml` | **Chưa** |
+| Tách 2 máy qua LAN | Code và hướng dẫn xong, đã mô phỏng bằng IP LAN (check đạt); **chưa thử trên máy B thật** |
 | Giao diện nhập liệu (`app/entry.py`) | Xong, đã thử trên 1 máy: sinh viên, đăng ký (kể cả liên vùng), chứng chỉ jsonb (một giao dịch), thêm ngẫu nhiên N dòng, báo lỗi khi trạm mất kết nối |
 | Dashboard (`app/dash.py`) | Xong, đã thử trên 1 máy: ô từng trạm, tổng hợp so với đối chứng, nhật ký sự kiện, làm mới 2 giây. Chưa kiểm hết nhật ký lúc tắt/bật trạm |
 | `make check` đầy đủ (3 quy tắc, PK/FK, CHECK, jsonb, Q1–Q5) | Xong, đã thử: toàn PASS; cố ý phá dữ liệu (trùng PK, lớp mồ côi) thì báo FAIL đúng chỗ |
@@ -54,16 +54,29 @@ Dùng `SIZE=mini` để kiểm tra bằng mắt. Mật khẩu Postgres `cs5104` 
 
 Vào thử: `docker compose exec campus_a psql -U postgres -d uni` (bảng cục bộ `student`, … và `all_student`, …).
 
-## Triển khai trên 2 máy (dự kiến, chưa kiểm thử)
+## Triển khai trên 2 máy (LAN)
 
-Máy A: `make up MACHINE=A` (chạy `campus_a`). Máy B: `make up MACHINE=B` (chạy `campus_b`, `campus_c`).
-Máy B cần công bố cổng 5433/5434 ra LAN (Windows + WSL2: chuyển tiếp cổng hoặc `networkingMode=mirrored` trong `.wslconfig`, mở tường lửa). Tạo link bằng IP máy B:
+Máy A: `campus_a` (trung tâm), `ref_central`, giao diện, dashboard, toxiproxy, thư mục `data/`. Máy B: `campus_b` + `campus_c`. **Máy B chỉ cần Docker và `docker-compose.yml`** (không cần dữ liệu hay Python): dữ liệu được nạp từ máy A qua LAN.
 
-```bash
-make link HOSTB=<IP máy B> PORTB=5433 HOSTC=<IP máy B> PORTC=5434
-```
+**Trên máy B**
+1. Lấy IP LAN (`ipconfig` → IPv4). Mở tường lửa (PowerShell chạy Admin):
+   ```powershell
+   New-NetFirewallRule -DisplayName "csdl-pg" -Direction Inbound -Protocol TCP -LocalPort 5433,5434 -Action Allow
+   ```
+2. Dựng 2 trạm: `docker compose --profile B up -d --wait` (hoặc `make up MACHINE=B`). Docker Desktop công bố cổng ra IP của máy Windows. Nếu Docker chạy trực tiếp trong WSL2 (không qua Docker Desktop), cần `networkingMode=mirrored` trong `.wslconfig` hoặc `netsh interface portproxy`.
 
-Cần đối chiếu với Phụ lục B / `cs5104_labs/lan/` của giảng viên khi có tài liệu đó.
+**Trên máy A**
+1. `cp deploy.2machine.example.toml deploy.toml` rồi thay `<IP_MAY_B>` bằng IP máy B.
+2. Kiểm tra thông mạng: `nc -vz <IP_MAY_B> 5433` (PowerShell: `Test-NetConnection <IP_MAY_B> -Port 5433`).
+3. `make all MACHINE=A` (dựng A, nạp dữ liệu vào cả 3 trạm qua LAN, tạo fdw qua toxiproxy, `make check`).
+4. `make dash` — mỗi ô trạm hiển thị đúng máy và IP; `make bench` để đo trạm ở máy B (N3).
+
+**Lưu ý**
+- Mật khẩu `cs5104` chỉ dùng trong mạng LAN thử nghiệm.
+- Wi-Fi một số nơi cô lập các thiết bị với nhau (client isolation): dùng điểm phát Wi-Fi điện thoại hoặc cáp mạng làm phương án dự phòng cho buổi bảo vệ.
+- Độ trễ 30 ms đặt ở máy A (toxiproxy đứng trước `postgres_fdw`), cộng thêm độ trễ LAN thật.
+- Đã kiểm thử bằng cách trỏ `campus_b/c` tới IP LAN của chính máy A (đường mạng/IP thật): `make check` đạt toàn bộ. **Chưa thử trên máy B thật.**
+- Cần đối chiếu với Phụ lục B / `cs5104_labs/lan/` của giảng viên khi có tài liệu đó.
 
 ## Cấu trúc
 

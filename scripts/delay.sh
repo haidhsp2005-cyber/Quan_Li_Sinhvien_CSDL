@@ -7,10 +7,12 @@
 # Upstream mặc định là container cùng mạng compose; khi 2 máy thật: UPSTREAM_B=<IP máy B>:5433 UPSTREAM_C=<IP máy B>:5434
 set -euo pipefail
 API=${TOXIPROXY:-http://localhost:8474}
-UB=${UPSTREAM_B:-campus_b:5432}; UC=${UPSTREAM_C:-campus_c:5432}
+PY=${PY:-python3}; HERE=$(dirname "$0")   # đường dẫn tương đối: py của Windows không đọc được /d/...
+UB=${UPSTREAM_B:-$($PY -X utf8 "$HERE/site.py" upstream campus_b)}; UC=${UPSTREAM_C:-$($PY -X utf8 "$HERE/site.py" upstream campus_c)}
 MS=${DELAY_MS:-30}; HALF=$((MS / 2))
 
-mk() { curl -sf -X POST "$API/proxies" -d "{\"name\":\"$1\",\"listen\":\"0.0.0.0:$2\",\"upstream\":\"$3\",\"enabled\":true}" >/dev/null || true; }
+mk() { curl -s -X DELETE "$API/proxies/$1" >/dev/null || true   # tạo lại để cập nhật upstream
+  curl -sf -X POST "$API/proxies" -d "{\"name\":\"$1\",\"listen\":\"0.0.0.0:$2\",\"upstream\":\"$3\",\"enabled\":true}" >/dev/null || true; }
 tox() { # proxy stream
   curl -sf -X POST "$API/proxies/$1/toxics" -d "{\"name\":\"lat_$2\",\"type\":\"latency\",\"stream\":\"$2\",\"toxicity\":1.0,\"attributes\":{\"latency\":$HALF,\"jitter\":0}}" >/dev/null
 }

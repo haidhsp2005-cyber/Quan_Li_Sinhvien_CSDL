@@ -1,0 +1,24 @@
+# Mẫu 2 máy: copy thành deploy.toml, thay <IP_MAY_B> bằng IP LAN của máy B (ipconfig / ip addr).
+# Máy A: campus_a (+ trung tâm, giao diện, dashboard, toxiproxy). Máy B: campus_b, campus_c.
+[db]
+name = "uni"
+user = "postgres"
+password = "cs5104"
+
+[stations.campus_a]
+machine = "A"
+host = "localhost"
+port = 5432
+weight = 0.50
+
+[stations.campus_b]
+machine = "B"
+host = "<IP_MAY_B>"
+port = 5433
+weight = 0.32
+
+[stations.campus_c]
+machine = "B"
+host = "<IP_MAY_B>"
+port = 5434
+weight = 0.18

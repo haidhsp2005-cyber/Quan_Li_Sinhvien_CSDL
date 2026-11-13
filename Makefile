@@ -1,7 +1,7 @@
 # Makefile (chạy trong WSL/Git Bash). Biến: SIZE=mini|lab, DATAGEN=<thư mục bộ sinh>, PY=python3
 SIZE ?= lab
 PY ?= python3
-export COMPOSE_PROFILES
+export COMPOSE_PROFILES PY
 
 up:      ## make up MACHINE=A|B|all  (thử 1 máy: MACHINE=all)
 	COMPOSE_PROFILES=$(or $(MACHINE),all) docker compose up -d --wait
@@ -24,7 +24,7 @@ delay-on:  ## trễ 30 ms giữa trạm trung tâm và trạm xa
 delay-off:
 	bash scripts/delay.sh off
 down:
-	COMPOSE_PROFILES=all docker compose down -v
+	COMPOSE_PROFILES=$(or $(MACHINE),all) docker compose down -v
 all: up data link check
 .PHONY: up data link check check-counts bench delay-on delay-off down all
 

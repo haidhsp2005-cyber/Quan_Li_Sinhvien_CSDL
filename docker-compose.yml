@@ -28,16 +28,12 @@ services:
     ports: ["5433:5432"]
     volumes:
       - b_data:/var/lib/postgresql
-      - ./data:/data:ro
-      - ./sql:/sql:ro
   campus_c:
     <<: *pg
     profiles: ["B", "all"]
     ports: ["5434:5432"]
     volumes:
       - c_data:/var/lib/postgresql
-      - ./data:/data:ro
-      - ./sql:/sql:ro
 
   # Proxy độ trễ đứng giữa trạm trung tâm và các trạm xa (postgres_fdw đi qua đây).
   # scripts/delay.sh on|off thêm/bỏ độ trễ; chạy cùng máy với campus_a.
