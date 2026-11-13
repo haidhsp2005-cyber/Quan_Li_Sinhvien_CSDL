@@ -15,7 +15,8 @@ Thiết kế phân tán và lập luận: [docs/PLAN.md](docs/PLAN.md).
 | Tách 2 máy qua LAN, `deploy.toml` | **Chưa** |
 | Giao diện nhập liệu (`app/entry.py`) | Xong, đã thử trên 1 máy: sinh viên, đăng ký (kể cả liên vùng), chứng chỉ jsonb (một giao dịch), thêm ngẫu nhiên N dòng, báo lỗi khi trạm mất kết nối |
 | Dashboard (`app/dash.py`) | Xong, đã thử trên 1 máy: ô từng trạm, tổng hợp so với đối chứng, nhật ký sự kiện, làm mới 2 giây. Chưa kiểm hết nhật ký lúc tắt/bật trạm |
-| `make check` đầy đủ (3 quy tắc đúng đắn, PK/FK), `bench`, `delay-on/off` | **Chưa** (hiện `make check` mới so số dòng; sau khi nhập thêm dòng sẽ báo FAIL vì tổng lớn hơn đối chứng — chạy lại `make data` để về trạng thái sạch) |
+| `make check` đầy đủ (3 quy tắc, PK/FK, CHECK, jsonb, Q1–Q5) | Xong, đã thử: toàn PASS; cố ý phá dữ liệu (trùng PK, lớp mồ côi) thì báo FAIL đúng chỗ |
+| `bench`, `delay-on/off` | **Chưa** |
 
 ## Yêu cầu
 
@@ -40,7 +41,8 @@ Từng bước:
 | `make up MACHINE=all` | Dựng 3 container: `campus_a` :5432, `campus_b` :5433, `campus_c` :5434 |
 | `make data SIZE=lab` | Sinh CSV (seed cố định), chia mảnh theo trạm (`data/<size>/<trạm>/`), tạo schema, nạp `ref_central` (CSDL đối chứng, trong container A) và 3 trạm |
 | `make link` | Tạo `postgres_fdw` và các khung nhìn `all_<bảng>` ở trạm trung tâm |
-| `make check` | So tổng số dòng `all_*` với `ref_central` |
+| `make check` | Kiểm tra đầy đủ (~1 phút): 3 quy tắc đúng đắn (đầy đủ / tái tạo được / rời nhau) cho 9 bảng chia, PK duy nhất toàn hệ, `course` nhân bản giống nhau, mảnh đúng vùng, FK cục bộ và `enrollment.section_id` liên vùng, jsonb ↔ bảng quan hệ, Q1–Q5 giống `ref_central` (Q1 không Foreign Scan, Q4 = Q5). Chỉ so với đối chứng các dòng nạp (id < 1.000.000); dòng thêm qua giao diện chỉ phải thoả quy tắc cấu trúc. Cần `pip install -r requirements.txt` |
+| `make check-counts` | Chỉ so tổng số dòng `all_*` với `ref_central` (sau khi nhập thêm dòng sẽ lệch, là bình thường) |
 | `make down` | Xoá container và volume |
 
 | `make entry` | Giao diện nhập liệu http://localhost:8501 |

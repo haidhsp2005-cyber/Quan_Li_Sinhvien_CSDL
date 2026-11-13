@@ -11,12 +11,14 @@ link:    ## postgres_fdw + all_* ở trạm trung tâm (campus_a)
 	MSYS_NO_PATHCONV=1 COMPOSE_PROFILES=all docker compose exec -T campus_a psql -U postgres -d uni -v ON_ERROR_STOP=1 -q \
 	  -v hostb=$(or $(HOSTB),campus_b) -v portb=$(or $(PORTB),5432) -v hostc=$(or $(HOSTC),campus_c) -v portc=$(or $(PORTC),5432) \
 	  -f /sql/fdw_central.sql
-check:   ## so số dòng all_* với ref_central
+check:   ## kiểm tra đầy đủ: 3 quy tắc, PK/FK, CHECK, jsonb, Q1-Q5 vs đối chứng
+	$(or $(PY),python3) -X utf8 scripts/check.py
+check-counts: ## chỉ so số dòng all_* với ref_central
 	bash scripts/check_counts.sh
 down:
 	COMPOSE_PROFILES=all docker compose down -v
 all: up data link check
-.PHONY: up data link check down all
+.PHONY: up data link check check-counts down all
 
 entry:   ## giao diện nhập liệu http://localhost:8501
 	streamlit run app/entry.py --server.port 8501
