@@ -51,7 +51,7 @@ Từng bước:
 
 Cài thư viện cho giao diện: `python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt`. Trạm, máy, IP, cổng cấu hình ở `deploy.toml`. Nếu cổng 5432–5434 hoặc 8501/8502 đã bị dự án khác dùng, đổi trong `docker-compose.yml`, `deploy.toml` và `Makefile`. Khi không dùng: `docker compose --profile all stop` (giữ dữ liệu).
 
-Dùng `SIZE=mini` để kiểm tra bằng mắt. Mật khẩu Postgres `cs5104` chỉ dành cho môi trường thử.
+Dùng `SIZE=mini` để kiểm tra bằng mắt. Sau khi khởi động lại Docker/máy, chạy `make up MACHINE=A` (hoặc `make link`): `make up` tạo lại proxy toxiproxy vốn mất mỗi lần khởi động; thiếu bước này Q2–Q5 báo `Connection refused`. Mật khẩu Postgres `cs5104` chỉ dành cho môi trường thử.
 
 Vào thử: `docker compose exec campus_a psql -U postgres -d uni` (bảng cục bộ `student`, … và `all_student`, …).
 

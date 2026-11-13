@@ -3,8 +3,9 @@ SIZE ?= lab
 PY ?= python3
 export COMPOSE_PROFILES PY
 
-up:      ## make up MACHINE=A|B|all  (thử 1 máy: MACHINE=all)
+up:      ## make up MACHINE=A|B|all  (thử 1 máy: MACHINE=all). Ở máy A tạo lại proxy toxiproxy (mất mỗi khi khởi động lại)
 	COMPOSE_PROFILES=$(or $(MACHINE),all) docker compose up -d --wait
+	$(if $(filter B,$(MACHINE)),,bash scripts/delay.sh setup)
 data:    ## sinh CSV, chia mảnh, tạo schema, nạp ref_central + 3 trạm
 	DATAGEN=$(DATAGEN) bash scripts/gen.sh $(SIZE)
 	bash scripts/load.sh $(SIZE)
