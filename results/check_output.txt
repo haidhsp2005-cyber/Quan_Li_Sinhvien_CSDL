@@ -1,0 +1,59 @@
+== 1-2. Ba quy tắc đúng đắn và khoá chính duy nhất
+PASS  section: rời nhau, PK duy nhất toàn hệ
+PASS  section: đầy đủ (mọi dòng đối chứng có ở một trạm)  — 2500 dòng
+PASS  section: tái tạo được (hợp các mảnh = đối chứng, đúng nội dung)
+PASS  student: rời nhau, PK duy nhất toàn hệ
+PASS  student: đầy đủ (mọi dòng đối chứng có ở một trạm)  — 15000 dòng
+PASS  student: tái tạo được (hợp các mảnh = đối chứng, đúng nội dung)
+PASS  enrollment: rời nhau, PK duy nhất toàn hệ
+PASS  enrollment: đầy đủ (mọi dòng đối chứng có ở một trạm)  — 120000 dòng
+PASS  enrollment: tái tạo được (hợp các mảnh = đối chứng, đúng nội dung)
+PASS  certificate: rời nhau, PK duy nhất toàn hệ
+PASS  certificate: đầy đủ (mọi dòng đối chứng có ở một trạm)  — 12000 dòng
+PASS  certificate: tái tạo được (hợp các mảnh = đối chứng, đúng nội dung)
+PASS  cert_language: rời nhau, PK duy nhất toàn hệ
+PASS  cert_language: đầy đủ (mọi dòng đối chứng có ở một trạm)  — 5439 dòng
+PASS  cert_language: tái tạo được (hợp các mảnh = đối chứng, đúng nội dung)
+PASS  cert_it: rời nhau, PK duy nhất toàn hệ
+PASS  cert_it: đầy đủ (mọi dòng đối chứng có ở một trạm)  — 4178 dòng
+PASS  cert_it: tái tạo được (hợp các mảnh = đối chứng, đúng nội dung)
+PASS  cert_it_module: rời nhau, PK duy nhất toàn hệ
+PASS  cert_it_module: đầy đủ (mọi dòng đối chứng có ở một trạm)  — 9725 dòng
+PASS  cert_it_module: tái tạo được (hợp các mảnh = đối chứng, đúng nội dung)
+PASS  cert_research: rời nhau, PK duy nhất toàn hệ
+PASS  cert_research: đầy đủ (mọi dòng đối chứng có ở một trạm)  — 2383 dòng
+PASS  cert_research: tái tạo được (hợp các mảnh = đối chứng, đúng nội dung)
+PASS  cert_research_coauthor: rời nhau, PK duy nhất toàn hệ
+PASS  cert_research_coauthor: đầy đủ (mọi dòng đối chứng có ở một trạm)  — 3587 dòng
+PASS  cert_research_coauthor: tái tạo được (hợp các mảnh = đối chứng, đúng nội dung)
+PASS  course nhân bản giống đối chứng ở campus_a
+PASS  course nhân bản giống đối chứng ở campus_b
+PASS  course nhân bản giống đối chứng ở campus_c
+   (dòng thêm qua giao diện, không so với đối chứng: {'student': 6, 'enrollment': 26, 'certificate': 10, 'cert_language': 6, 'cert_it': 3, 'cert_it_module': 6, 'cert_research': 1})
+== 3. Ràng buộc mảnh
+PASS  campus_a: student chỉ có sinh viên của cơ sở mình
+PASS  campus_a: section chỉ có lớp mở ở cơ sở mình
+PASS  campus_a: dòng dẫn xuất cùng trạm với cha, FK cục bộ không mồ côi
+PASS  campus_b: student chỉ có sinh viên của cơ sở mình
+PASS  campus_b: section chỉ có lớp mở ở cơ sở mình
+PASS  campus_b: dòng dẫn xuất cùng trạm với cha, FK cục bộ không mồ côi
+PASS  campus_c: student chỉ có sinh viên của cơ sở mình
+PASS  campus_c: section chỉ có lớp mở ở cơ sở mình
+PASS  campus_c: dòng dẫn xuất cùng trạm với cha, FK cục bộ không mồ côi
+== 4. Khoá ngoại liên vùng
+PASS  enrollment.section_id tồn tại ở một trạm nào đó  — có 3466 lớp ở trạm khác (liên vùng)
+== 5. jsonb tương đương bảng quan hệ
+PASS  campus_a: jsonb ↔ cert_language / cert_it(+module) / cert_research(+coauthor)
+PASS  campus_b: jsonb ↔ cert_language / cert_it(+module) / cert_research(+coauthor)
+PASS  campus_c: jsonb ↔ cert_language / cert_it(+module) / cert_research(+coauthor)
+== 6. Q1–Q5 trạm trung tâm so với CSDL đối chứng
+PASS  Q1: giống đối chứng  — 6 dòng
+PASS  Q2: giống đối chứng  — 232 dòng
+PASS  Q3: giống đối chứng  — 49 dòng
+PASS  Q4: giống đối chứng  — 3248 dòng
+PASS  Q5: giống đối chứng  — 3248 dòng
+PASS  Q4 (jsonb) = Q5 (bảng quan hệ)  — 3248 sinh viên
+PASS  Q1 chạy trọn tại một trạm (EXPLAIN không có Foreign Scan)
+   (Q3 liên vùng: 4 Foreign Scan trong kế hoạch)
+
+TẤT CẢ ĐẠT

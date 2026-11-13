@@ -110,6 +110,59 @@ shares = " / ".join(pct(N1[s]["student"], st_tot) for s in SITES).replace(".", "
 
 gz = N5["gin"]; sz = N5["size_bytes"]
 
+
+import csv as _csv
+def _check_block():
+    f = ROOT / "results" / "check_output.txt"
+    if not f.exists(): return ""
+    sec, cnt, fk = None, {}, ""
+    for l in f.read_text(encoding="utf-8").splitlines():
+        if l.startswith("=="): sec = l.split(".")[0].strip("= ").strip(); cnt[sec] = [0, 0]
+        elif l.startswith("PASS") and sec:
+            cnt[sec][0] += 1
+            if sec == "4": fk = l.split("—", 1)[-1].strip()
+        elif l.startswith("FAIL") and sec: cnt[sec][1] += 1
+    names = {"1-2": "Ba quy tắc đúng đắn (đầy đủ / tái tạo được / rời nhau) cho 9 bảng chia, PK duy nhất toàn hệ, <code>course</code> nhân bản giống nhau",
+             "3": "Mảnh đúng vùng (CHECK), dòng dẫn xuất cùng trạm với cha, FK cục bộ không mồ côi (3 trạm × 3 mục)",
+             "4": "Khoá ngoại liên vùng <code>enrollment.section_id</code> tồn tại ở một trạm nào đó (0 lớp mồ côi)",
+             "5": "jsonb ↔ <code>cert_language</code>, <code>cert_it</code> (+module), <code>cert_research</code> (+coauthor), từng trạm",
+             "6": "Q1–Q5 trên trạm trung tâm giống CSDL đối chứng; Q4 = Q5; Q1 không Foreign Scan"}
+    rows = [[k, names[k], str(a + b), "PASS" if b == 0 else f"{b} FAIL"] for k, (a, b) in cnt.items() if k in names]
+    total = sum(a for a, _ in cnt.values())
+    return (f"<h3>Kết quả <code>make check</code>: {total} mục, tất cả PASS</h3>" + tbl(["Nhóm", "Kiểm tra", "Số mục", "Kết quả"], rows, align=["l", "l", "r", "l"]) +
+            "<p><b>Thử phá dữ liệu để biết bộ kiểm tra bắt được lỗi:</b> cố ý thêm một sinh viên trùng id sang <code>campus_c</code> và một đăng ký trỏ tới lớp 99999 → báo 4 mục FAIL (student không rời nhau, student và enrollment không tái tạo được, 1 lớp mồ côi); sau khi hoàn tác thì đạt lại toàn bộ. "
+            "So với đối chứng chỉ xét dòng nạp từ bộ sinh (id &lt; 1.000.000); dòng thêm qua giao diện chỉ phải thoả quy tắc cấu trúc.</p>")
+CHECK_HTML = _check_block()
+
+def _remote_block():
+    rows = []
+    for q in ("Q2", "Q2_opt", "Q3", "Q3_opt", "Q4", "Q5", "Q5_opt"):
+        f = OUT.parent / "results" / f"explain_{q}.txt"
+        if not f.exists(): continue
+        sqls = []
+        for l in f.read_text(encoding="utf-8").splitlines():
+            if "Remote SQL:" in l:
+                s = l.split("Remote SQL:", 1)[1].strip()
+                if s not in sqls: sqls.append(s)
+        rows.append([q, "<br>".join(f"<code>{e(s[:230])}{'…' if len(s) > 230 else ''}</code>" for s in sqls)])
+    return "<h3>Trích kế hoạch: câu SQL thực sự gửi sang trạm xa</h3>" + tbl(["Q", "Remote SQL (lấy từ EXPLAIN (ANALYZE, VERBOSE), đã loại trùng)"], rows)
+REMOTE_HTML = _remote_block()
+
+def _raw_block():
+    f = ROOT / "results" / "results.csv"
+    if not f.exists(): return ""
+    d = {}
+    for r in _csv.DictReader(f.open(encoding="utf-8")):
+        d.setdefault(r["query"], {})[r["scenario"]] = [r[f"run{i}_ms"] for i in range(1, 6)]
+    rows = []
+    for q, s in d.items():
+        a = next((v for k, v in s.items() if k.startswith("no")), []); b = next((v for k, v in s.items() if k.startswith("delay")), [])
+        rows.append([q, " · ".join(a), " · ".join(b)])
+    return ("<h3>Số liệu đo thô (ms, 5 lần/truy vấn; lần 1 bị loại, lấy trung vị 4 lần sau)</h3>" +
+            tbl(["Q", "Không trễ: lần 1 · 2 · 3 · 4 · 5", "Trễ 30 ms: lần 1 · 2 · 3 · 4 · 5"], rows) +
+            "<p class='cap'>Lần 1 thường chậm hơn do mở kết nối <code>postgres_fdw</code> và nạp bộ nhớ đệm; vì vậy bị loại theo quy định đo của đề.</p>")
+RAW_HTML = _raw_block()
+
 # ================================================================== CSS dùng chung
 BASE_CSS = """
 *{box-sizing:border-box} body{font-family:'Segoe UI',Arial,sans-serif;color:#1a202c;margin:0}
@@ -127,7 +180,7 @@ h3{font-size:10pt;margin:7px 0 2px} p{margin:3px 0 4px;text-align:justify} ul,ol
 .sub{color:#4a5568;font-size:9.5pt;margin-bottom:5px} table{font-size:9.2pt;margin:3px 0 7px} .fig{text-align:center;margin:4px 0 6px;break-inside:avoid}
 .fig img{max-width:100%;border:1px solid #cbd5e0} figcaption,.cap{font-size:8.4pt;color:#4a5568;text-align:center;margin-top:1px}
 .two{display:flex;gap:8px} .two>div{flex:1} .note{background:#fffaf0;border-left:3px solid #dd6b20;padding:3px 7px;margin:4px 0;font-size:9pt}
-.pb{break-before:page} table,.fig{break-inside:avoid}
+.pb{break-before:page} table,.fig{break-inside:avoid} h2,h3{break-after:avoid}
 """
     members = tbl(["Thành viên", "MSHV", "Phần phụ trách"], [[e(a), e(b), re.sub(r"`([^`]*)`", r"<code></code>", e(c))] for a, b, c in MEMBERS])
     body = f"""
@@ -155,24 +208,43 @@ h3{font-size:10pt;margin:7px 0 2px} p{margin:3px 0 4px;text-align:justify} ul,ol
 </ul>
 <p>Ba quy tắc đúng đắn được kiểm bằng <code>make check</code> cho 9 bảng bị chia: <b>đầy đủ</b> (mọi dòng đối chứng có ở một trạm), <b>tái tạo được</b> (hợp các mảnh bằng đúng nội dung đối chứng), <b>rời nhau</b> (không dòng nào ở hai trạm; cũng là khoá chính duy nhất toàn hệ). Mỗi trạm chỉ giữ dữ liệu vùng mình; Q1 không có Foreign Scan; trạm trung tâm trả lời Q1–Q5 giống CSDL đối chứng.</p>
 
+<h3>Các phương án đã cân nhắc</h3>
+{tbl(["Quyết định", "Phương án khác", "Vì sao không chọn"], [
+ ["<code>enrollment</code> dẫn xuất theo <b>student</b>", "Theo <code>section</code> (Q3 cục bộ tại B)", "Q1 cần toàn bộ đăng ký của sinh viên cơ sở A ở A. Chia theo lớp thì ~7 % đăng ký của sinh viên A nằm ở B, C nên Q1 phải qua mạng, vi phạm ràng buộc “Q1 chạy trọn tại một trạm”"],
+ ["<code>section</code> chia theo <code>campus</code>", "Nhân bản 2.500 dòng ra 3 trạm", "Nhân bản làm <code>enrollment.section_id</code> thành FK thật và Q2 tính cục bộ, nhưng mỗi lần thêm lớp phải ghi cả 3 trạm (cần giao dịch phân tán) và mất “vùng” của lớp mà bộ sinh dùng (<code>section.campus</code>). Nhóm chọn chia, đổi lại FK chéo trạm xử lý ở tầng ghi + <code>make check</code>"],
+ ["PK là sequence khối id", "UUID hoặc ghép tiền tố trạm", "Đổi kiểu hoặc thêm cột là đổi lược đồ (đề cấm). Khối id giữ nguyên kiểu <code>integer</code>, ghi độc lập từng trạm"],
+ ["jsonb và bản quan hệ cùng trạm", "Chia dọc: để jsonb ở trạm riêng", "Ghi hai biểu diễn trong một giao dịch cục bộ; không cần giao dịch phân tán để giữ chúng nhất quán"],
+ ["<code>course</code> nhân bản", "Chia theo trạm", "Cả 3 trạm cần đủ 300 học phần để giữ FK <code>section.course_code</code>; ít ghi nên nhân bản rẻ"]], "")}
+
 <h2>3. Sơ đồ triển khai, giao diện và dashboard</h2>
 <div class="fig">{svg_deploy()}<figcaption>Hình 2. Triển khai trên hai máy qua LAN; <code>deploy.toml</code> ghi trạm → máy, IP, cổng</figcaption></div>
 <p><b>Giao diện nhập liệu</b> (Streamlit, máy A): thêm sinh viên, thêm đăng ký (kể cả liên vùng), thêm chứng chỉ theo loại — form hiện đúng trường của loại, <code>detail</code> (jsonb) và bảng quan hệ ghi trong <b>một giao dịch</b> vào <b>đúng trạm</b>, thông báo trạm và máy đã ghi; trạm đích mất kết nối thì báo lỗi, không ghi sang trạm khác; nút “thêm ngẫu nhiên N dòng”. <b>Dashboard</b>: mỗi trạm một ô (máy, IP, xanh/đỏ, số dòng từng bảng, đọc thẳng từng trạm không qua <code>postgres_fdw</code>), bảng tổng hợp so với <code>ref_central</code>, nhật ký sự kiện, tự làm mới 2 giây.</p>
 <div class="fig"><img src="{IMG}entry_enroll.png" style="width:74%"><div class="cap">Hình 3. Đăng ký liên vùng: sinh viên ở campus_a, lớp ở campus_b; dòng ghi vào trạm sinh viên</div></div>
 <div class="fig"><img src="{IMG}dash_down.png" style="width:74%"><div class="cap">Hình 4. Dashboard khi tắt campus_c (đỏ + lỗi); hai trạm còn lại vẫn xanh</div></div>
+<h3>Luồng ghi một đăng ký liên vùng</h3>
+<ol>
+<li>Người dùng nhập mã sinh viên và mã lớp; giao diện tra <b>trạm của sinh viên</b> (hỏi lần lượt các trạm) và <b>trạm, học kỳ của lớp</b>.</li>
+<li>Không có sinh viên hoặc lớp thì từ chối; nếu không tìm thấy mà có trạm mất kết nối thì cũng từ chối (không kết luận “không tồn tại” khi chưa hỏi đủ).</li>
+<li>Mở giao dịch ở trạm của sinh viên: lấy id từ <code>enrollment_id_seq</code> (khối id của trạm), tính <code>total = 0,3·midterm + 0,7·final</code> như bộ sinh, INSERT, COMMIT.</li>
+<li>Báo “đã ghi vào trạm nào, máy nào, IP:cổng” và cờ <b>liên vùng</b> khi lớp ở trạm khác; dashboard thấy số dòng đổi trong ≤ 2 giây.</li>
+</ol>
+<p>Chứng chỉ: hàm <code>insert_certificate</code> ghi <code>detail</code> (jsonb) rồi <b>suy ra</b> các dòng <code>cert_language</code>/<code>cert_it</code>(+module)/<code>cert_research</code>(+coauthor) từ chính jsonb đó trong cùng giao dịch, nên hai biểu diễn không thể lệch nhau. “Thêm ngẫu nhiên N dòng” trộn 15 % sinh viên, 65 % đăng ký (≈ 7 % liên vùng), 20 % chứng chỉ theo tỉ lệ cơ sở 50/32/18; dòng nào có trạm đích mất kết nối thì thất bại và được báo, không chuyển sang trạm khác.</p>
+<div class="fig"><img src="{IMG}entry_cert.png" style="width:70%"><div class="cap">Hình 5. Thêm chứng chỉ: form theo loại, ghi jsonb và bảng quan hệ trong một giao dịch</div></div>
+<div class="fig"><img src="{IMG}dash_ok.png" style="width:74%"><div class="cap">Hình 6. Dashboard: ô từng trạm, tổng hợp so với đối chứng (cột “chênh lệch” là số dòng đã thêm qua giao diện) và nhật ký sự kiện</div></div>
 <div class="note">Ảnh chụp khi thử trên một máy (nhãn “Máy A” cho cả 3 trạm); thay ảnh bằng ảnh chụp trên 2 máy khi có máy B.</div>
 
 <h2>4. Dữ liệu và đối chiếu với <code>summary.json</code></h2>
 <p>Dữ liệu chỉ lấy từ bộ sinh của giảng viên (seed 284617, không sửa). <code>schema_central.sql</code> đúng sơ đồ; CSV nạp vào <code>ref_central</code> bằng <code>COPY … WITH (FORMAT csv, HEADER true)</code>; <code>split.py</code> chia CSV theo <code>student→home_campus</code>, <code>section→campus</code>, phần còn lại theo cha rồi nạp từng trạm. Tổng các mảnh khớp <code>summary.json</code> và CSDL đối chứng:</p>
 {tbl(["Bảng", "campus_a", "campus_b", "campus_c", "Tổng", "summary.json", "Khớp"], n1_rows, align=["l","r","r","r","r","r","l"])}
 
+{CHECK_HTML}
 <h2>5. Cách chạy (tóm tắt)</h2>
 <p>Yêu cầu Docker, <code>make</code>, Python ≥ 3.11. Máy B: <code>docker compose --profile B up -d</code> (chỉ cần <code>docker-compose.yml</code>). Máy A: sao chép <code>deploy.2machine.example.toml</code> thành <code>deploy.toml</code>, điền IP máy B, rồi <code>make all MACHINE=A</code> (dựng A, nạp dữ liệu vào ba trạm qua LAN, tạo <code>postgres_fdw</code> và <code>all_&lt;bảng&gt;</code>, <code>make check</code>). Các lệnh khác: <code>make entry</code>, <code>make dash</code>, <code>make bench</code>, <code>make delay-on/off</code>, <code>make down</code>. Hướng dẫn đầy đủ trong <code>README.md</code> của kho mã.</p>
 
 <h2>6. Kết quả đo và giải thích N1–N5</h2>
 <p>Cách đo: mỗi truy vấn chạy 5 lần, bỏ lần đầu, lấy trung vị; EXPLAIN (ANALYZE, VERBOSE) của Q1–Q5 lưu ở <code>results/</code>. Độ trễ 30 ms là khứ hồi (15 ms mỗi chiều) tạo bằng toxiproxy đứng trước <code>postgres_fdw</code>. Đo trên <b>{MEASURED_ON}</b>. Q3 dùng lớp {M['q3_section']} (mở ở campus_b). Q1–Q5 là truy vấn viết trên <code>all_*</code>; biến thể <code>_opt</code> tự đẩy gom nhóm/nối xuống từng trạm và cho kết quả giống hệt.</p>
 {tbl(QHEAD, q_rows(["Q1","Q2","Q2_opt","Q3","Q3_opt","Q4","Q5","Q5_opt"]), align=QALIGN)}
-<div class="fig">{svg_bars()}<figcaption>Hình 5. Thời gian Q1–Q5 (trung vị) không trễ và trễ 30 ms</figcaption></div>
+<div class="fig">{svg_bars()}<figcaption>Hình 7. Thời gian Q1–Q5 (trung vị) không trễ và trễ 30 ms</figcaption></div>
 
 <h3>N1 — Số dòng mỗi mảnh</h3>
 <p>Sinh viên chia {shares} cho A/B/C, khớp trọng số đề 0,50/0,32/0,18 mà bộ sinh dùng để chọn cơ sở. <code>enrollment</code> ({n(N1['campus_a']['enrollment'])} / {n(N1['campus_b']['enrollment'])} / {n(N1['campus_c']['enrollment'])}) và <code>certificate</code> chia theo sinh viên nên cùng tỉ lệ; <code>section</code> chia theo cơ sở mở lớp cũng cùng trọng số. Tổng các mảnh bằng CSDL đối chứng; <code>course</code> nhân bản đủ 300 dòng ở mỗi trạm (Bảng ở mục 4).</p>
@@ -180,10 +252,12 @@ h3{font-size:10pt;margin:7px 0 2px} p{margin:3px 0 4px;text-align:justify} ul,ol
 {tbl(["Q", "Trạm xa", "Điều kiện thực sự đẩy xuống trạm xa (Remote SQL)"], [
  ["Q1", "0", "Không có Foreign Scan: bảng cục bộ của campus_a"],
  ["Q2", "2", "Chỉ <code>semester='2025-2'</code>; kéo <code>section_id, total</code> của ~40.000 dòng về rồi nối, gom nhóm ở trung tâm. Bản <code>_opt</code> đẩy cả <code>GROUP BY section_id</code> xuống nên chỉ về ≤ 2.500 nhóm"],
- ["Q3", "2", "Chỉ <code>section_id = {M['q3_section']}</code> ở enrollment; bảng <code>student</code> bị kéo về toàn bộ. Bản <code>_opt</code> đẩy phép nối enrollment ⋈ student xuống trạm xa, chỉ về {n(Q['Q3']['rows'])} dòng"],
+ ["Q3", "2", f"Chỉ <code>section_id = {M['q3_section']}</code> ở enrollment; bảng <code>student</code> bị kéo về toàn bộ. Bản <code>_opt</code> đẩy phép nối enrollment ⋈ student xuống trạm xa, chỉ về {n(Q['Q3']['rows'])} dòng"],
  ["Q4", "2", "Chỉ <code>cert_type='language'</code>; <b>điều kiện jsonb (<code>overall</code>, <code>speaking</code>) không được đẩy xuống</b> nên cột <code>detail</code> của mọi chứng chỉ ngoại ngữ chạy qua mạng rồi mới lọc"],
  ["Q5", "2", "<code>overall</code>, <code>speaking</code> đẩy được xuống <code>cert_language</code>, nhưng bảng <code>certificate</code> bị kéo về toàn bộ; bản <code>_opt</code> nối tại trạm xa"]], "")}
 <p>So sánh Q4 với Q5: điều kiện trên cột quan hệ đẩy được xuống trạm xa, còn biểu thức ép kiểu trên jsonb thì không.</p>
+{REMOTE_HTML}
+{RAW_HTML}
 <h3>N3 — Thời gian Q1–Q3, không trễ và trễ 30 ms</h3>
 <p>Q1 {ms(Q['Q1']['no_delay_ms'])} → {ms(Q['Q1']['delay_ms'])} ms (chênh nhỏ là nhiễu, không có truy vấn xa). Q2 {ms(Q['Q2']['no_delay_ms'])} → {ms(Q['Q2']['delay_ms'])} ms; Q3 {ms(Q['Q3']['no_delay_ms'])} → {ms(Q['Q3']['delay_ms'])} ms. Mức chênh ≈ <b>số vòng khứ hồi × 30 ms</b>: Q2 ≈ {str(Q['Q2']['est_round_trips']).replace('.', ',')} vòng, Q3 ≈ {str(Q['Q3']['est_round_trips']).replace('.', ',')} vòng. Một Foreign Scan tốn nhiều vòng (mở giao dịch xa, khai báo con trỏ, lấy từng lô 10.000 dòng, đóng) và <code>use_remote_estimate=true</code> còn gửi lệnh EXPLAIN sang trạm xa lúc lập kế hoạch. Thí nghiệm tắt tuỳ chọn này (rồi trả lại): với trễ, Q2 1.025 → 571 ms, Q3_opt 770 → 320 ms, Q4 458 → 335 ms, tức 10–15 vòng/truy vấn chỉ để ước lượng kế hoạch. Thời gian tăng theo số Foreign Scan, không theo lượng dữ liệu. <b>So sánh trạm cùng máy với trạm ở máy B: chưa đo</b> (đo trên một máy); sẽ bổ sung bằng <code>make bench</code> trên hai máy.</p>
 <h3>N4 — Tỉ lệ dòng liên vùng</h3>
