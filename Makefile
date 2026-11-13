@@ -19,6 +19,8 @@ check-counts: ## chỉ so số dòng all_* với ref_central
 	bash scripts/check_counts.sh
 bench:   ## đo Q1-Q5 (không trễ / trễ 30 ms), N1-N5 -> results/
 	$(PY) -X utf8 scripts/bench.py
+q:       ## chạy truy vấn demo: make q Q=1..5   (thêm EXPLAIN=1 để xem kế hoạch)
+	bash scripts/q.sh $(Q) $(if $(EXPLAIN),explain)
 delay-on:  ## trễ 30 ms giữa trạm trung tâm và trạm xa
 	bash scripts/delay.sh on
 delay-off:
@@ -26,7 +28,7 @@ delay-off:
 down:
 	COMPOSE_PROFILES=$(or $(MACHINE),all) docker compose down -v
 all: up data link check
-.PHONY: up data link check check-counts bench delay-on delay-off down all
+.PHONY: up data link check check-counts bench q delay-on delay-off down all
 
 entry:   ## giao diện nhập liệu http://localhost:8501
 	streamlit run app/entry.py --server.port 8501

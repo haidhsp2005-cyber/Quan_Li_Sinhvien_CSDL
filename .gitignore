@@ -2,3 +2,5 @@ data/
 output/
 __pycache__/
 *.pyc
+report/_prev/
+report/*.html

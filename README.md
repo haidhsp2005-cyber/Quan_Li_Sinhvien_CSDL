@@ -109,3 +109,13 @@ Mã và tài liệu được viết có hỗ trợ Claude (Anthropic); thành vi
 | `make bench` | Đo Q1–Q5 (5 lần, bỏ lần đầu, trung vị) không trễ và có trễ, thu số liệu N1–N5 → `results/results.csv`, `results/explain_*.txt`, `results/summary.md`, `results/metrics.json` |
 
 Giải thích N1–N5 (nháp báo cáo): [docs/KET_QUA_N1_N5.md](docs/KET_QUA_N1_N5.md). Nên chạy `make data` để về dữ liệu sạch trước khi đo. Hiện mới đo trên 1 máy.
+
+## Báo cáo, slide, demo
+
+| Tệp | Nội dung |
+|---|---|
+| `report/BaoCao_De2.pdf` | Báo cáo (A4, ≤ 10 trang): thiết kế phân tán, triển khai, dữ liệu, cách chạy, N1–N5, hạn chế, phân công, tài liệu tham khảo |
+| `report/Slide_De2.pdf` | Slide bảo vệ (11 trang, gồm phụ lục ảnh dự phòng) |
+| `docs/DEMO.md` | Kịch bản demo D1–D8 và câu hỏi vấn đáp |
+
+Tạo lại bằng `python3 report/build.py` (cần Chrome/Edge; sửa `GROUP`, `MEMBERS`, `MEASURED_ON` đầu file). Chạy truy vấn demo: `make q Q=1..5` (thêm `EXPLAIN=1` để xem kế hoạch).
