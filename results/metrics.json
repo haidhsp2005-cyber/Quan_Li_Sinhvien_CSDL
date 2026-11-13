@@ -1,0 +1,252 @@
+{
+  "runs": 5,
+  "delay_ms_rtt": 30,
+  "q3_section": 2,
+  "variants_equal": {
+    "Q2_opt": true,
+    "Q3_opt": true,
+    "Q5_opt": true,
+    "Q4=Q5": true
+  },
+  "queries": {
+    "Q1": {
+      "no_delay_ms": 8.13,
+      "delay_ms": 12.89,
+      "rows": 6,
+      "remote_stations": [],
+      "foreign_scans": 0,
+      "remote_sql": [],
+      "extra_ms": 4.8,
+      "est_round_trips": 0.2
+    },
+    "Q2": {
+      "no_delay_ms": 40.47,
+      "delay_ms": 1029.98,
+      "rows": 232,
+      "remote_stations": [
+        "b",
+        "c"
+      ],
+      "foreign_scans": 4,
+      "remote_sql": [
+        "SELECT section_id, course_code FROM public.section ORDER BY section_id ASC NULLS LAST",
+        "SELECT section_id, course_code FROM public.section ORDER BY section_id ASC NULLS LAST",
+        "SELECT section_id, total FROM public.enrollment WHERE ((semester = '2025-2'))",
+        "SELECT section_id, total FROM public.enrollment WHERE ((semester = '2025-2'))"
+      ],
+      "extra_ms": 989.5,
+      "est_round_trips": 33.0
+    },
+    "Q2_opt": {
+      "no_delay_ms": 32.66,
+      "delay_ms": 986.47,
+      "rows": 232,
+      "remote_stations": [
+        "b",
+        "c"
+      ],
+      "foreign_scans": 4,
+      "remote_sql": [
+        "SELECT section_id, course_code FROM public.section ORDER BY section_id ASC NULLS LAST",
+        "SELECT section_id, course_code FROM public.section ORDER BY section_id ASC NULLS LAST",
+        "SELECT section_id, count(*), count(*) FILTER (WHERE (total >= 5::numeric)) FROM public.enrollment WHERE ((semester = '2025-2')) GROUP BY 1",
+        "SELECT section_id, count(*), count(*) FILTER (WHERE (total >= 5::numeric)) FROM public.enrollment WHERE ((semester = '2025-2')) GROUP BY 1"
+      ],
+      "extra_ms": 953.8,
+      "est_round_trips": 31.8
+    },
+    "Q3": {
+      "no_delay_ms": 12.8,
+      "delay_ms": 972.3,
+      "rows": 49,
+      "remote_stations": [
+        "b",
+        "c"
+      ],
+      "foreign_scans": 4,
+      "remote_sql": [
+        "SELECT student_id, full_name FROM public.student",
+        "SELECT student_id, full_name FROM public.student",
+        "SELECT student_id FROM public.enrollment WHERE ((section_id = 2))",
+        "SELECT student_id FROM public.enrollment WHERE ((section_id = 2))"
+      ],
+      "extra_ms": 959.5,
+      "est_round_trips": 32.0
+    },
+    "Q3_opt": {
+      "no_delay_ms": 9.29,
+      "delay_ms": 770.16,
+      "rows": 49,
+      "remote_stations": [
+        "b",
+        "c"
+      ],
+      "foreign_scans": 2,
+      "remote_sql": [
+        "SELECT r2.student_id, r2.full_name FROM (public.enrollment r1 INNER JOIN public.student r2 ON (((r1.student_id = r2.student_id)) AND ((r1.section_id = 2))))",
+        "SELECT r2.student_id, r2.full_name FROM (public.enrollment r1 INNER JOIN public.student r2 ON (((r1.student_id = r2.student_id)) AND ((r1.section_id = 2))))"
+      ],
+      "extra_ms": 760.9,
+      "est_round_trips": 25.4
+    },
+    "Q4": {
+      "no_delay_ms": 17.59,
+      "delay_ms": 459.27,
+      "rows": 3248,
+      "remote_stations": [
+        "b",
+        "c"
+      ],
+      "foreign_scans": 2,
+      "remote_sql": [
+        "SELECT student_id, detail FROM public.certificate WHERE ((cert_type = 'language'))",
+        "SELECT student_id, detail FROM public.certificate WHERE ((cert_type = 'language'))"
+      ],
+      "extra_ms": 441.7,
+      "est_round_trips": 14.7
+    },
+    "Q5": {
+      "no_delay_ms": 19.4,
+      "delay_ms": 974.7,
+      "rows": 3248,
+      "remote_stations": [
+        "b",
+        "c"
+      ],
+      "foreign_scans": 4,
+      "remote_sql": [
+        "SELECT certificate_id FROM public.cert_language WHERE ((overall >= 6.5)) AND ((speaking >= 6.0)) ORDER BY certificate_id ASC NULLS LAST",
+        "SELECT certificate_id FROM public.cert_language WHERE ((overall >= 6.5)) AND ((speaking >= 6.0)) ORDER BY certificate_id ASC NULLS LAST",
+        "SELECT certificate_id, student_id FROM public.certificate ORDER BY certificate_id ASC NULLS LAST",
+        "SELECT certificate_id, student_id FROM public.certificate ORDER BY certificate_id ASC NULLS LAST"
+      ],
+      "extra_ms": 955.3,
+      "est_round_trips": 31.8
+    },
+    "Q5_opt": {
+      "no_delay_ms": 19.54,
+      "delay_ms": 912.91,
+      "rows": 3248,
+      "remote_stations": [
+        "b",
+        "c"
+      ],
+      "foreign_scans": 2,
+      "remote_sql": [
+        "SELECT r1.student_id FROM (public.certificate r1 INNER JOIN public.cert_language r2 ON (((r1.certificate_id = r2.certificate_id)) AND ((r2.overall >= 6.5)) AND ((r2.speaking >= 6.0)))) ORDER BY r1.student_id ASC NULLS LAST",
+        "SELECT r1.student_id FROM (public.certificate r1 INNER JOIN public.cert_language r2 ON (((r1.certificate_id = r2.certificate_id)) AND ((r2.overall >= 6.5)) AND ((r2.speaking >= 6.0)))) ORDER BY r1.student_id ASC NULLS LAST"
+      ],
+      "extra_ms": 893.4,
+      "est_round_trips": 29.8
+    }
+  },
+  "N1": {
+    "campus_a": {
+      "course": 300,
+      "section": 1248,
+      "student": 7548,
+      "enrollment": 60304,
+      "certificate": 6085,
+      "cert_language": 2719,
+      "cert_it": 2167,
+      "cert_it_module": 5059,
+      "cert_research": 1199,
+      "cert_research_coauthor": 1792
+    },
+    "campus_b": {
+      "course": 300,
+      "section": 819,
+      "student": 4784,
+      "enrollment": 38158,
+      "certificate": 3854,
+      "cert_language": 1747,
+      "cert_it": 1330,
+      "cert_it_module": 3134,
+      "cert_research": 777,
+      "cert_research_coauthor": 1176
+    },
+    "campus_c": {
+      "course": 300,
+      "section": 433,
+      "student": 2668,
+      "enrollment": 21538,
+      "certificate": 2061,
+      "cert_language": 973,
+      "cert_it": 681,
+      "cert_it_module": 1532,
+      "cert_research": 407,
+      "cert_research_coauthor": 619
+    },
+    "ref": {
+      "course": 300,
+      "section": 2500,
+      "cert_research": 2383,
+      "cert_research_coauthor": 3587,
+      "cert_it": 4178,
+      "cert_language": 5439,
+      "cert_it_module": 9725,
+      "student": 15000,
+      "certificate": 12000,
+      "enrollment": 120000
+    }
+  },
+  "N4": {
+    "cross_rows": 8423,
+    "total": 120000,
+    "rate": 0.0702,
+    "q3_rows_by_station": {
+      "campus_a": 1,
+      "campus_b": 47,
+      "campus_c": 1
+    },
+    "q3_remote_rows": 2,
+    "q3_rows": 49,
+    "campus_b_sections_remote_share": 0.0729,
+    "pred_30pct_scale": 4.27
+  },
+  "N5": {
+    "size_bytes": {
+      "certificate_total": 3219456,
+      "certificate_heap": 2547712,
+      "detail_bytes": 1751134,
+      "relational_total": 3244032,
+      "relational_heap": 2269184,
+      "gin_index_total": 598016
+    },
+    "gin": {
+      "without": {
+        "Q4b": [
+          7.31,
+          329
+        ],
+        "Q5b": [
+          13.37,
+          329
+        ],
+        "Q4": [
+          23.75,
+          3248
+        ]
+      },
+      "with": {
+        "Q4b": [
+          6.5,
+          329
+        ],
+        "Q5b": [
+          17.7,
+          329
+        ],
+        "Q4": [
+          30.94,
+          3248
+        ]
+      },
+      "with_plan_Q4b": [
+        "->  Bitmap Heap Scan on public.certificate  (cost=22.51..182.95 rows=193 width=4) (actual time=0.070..0.259 rows=176.00 loops=1)",
+        "->  Bitmap Index Scan on bench_gin  (cost=0.00..22.47 rows=193 width=0) (actual time=0.046..0.047 rows=176.00 loops=1)"
+      ],
+      "with_plan_Q4": []
+    }
+  }
+}

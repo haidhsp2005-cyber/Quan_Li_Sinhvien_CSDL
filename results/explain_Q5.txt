@@ -1,0 +1,53 @@
+-- Q5
+-- SELECT DISTINCT c.student_id FROM all_certificate c JOIN all_cert_language l USING(certificate_id) WHERE l.overall>=6.5 AND l.speaking>=6.0 ORDER BY 1
+
+Sort  (cost=6422.03..6422.53 rows=200 width=4) (actual time=14.974..15.075 rows=3248.00 loops=1)
+  Output: certificate.student_id
+  Sort Key: certificate.student_id
+  Sort Method: quicksort  Memory: 97kB
+  Buffers: shared hit=205
+  ->  HashAggregate  (cost=6412.39..6414.39 rows=200 width=4) (actual time=14.558..14.713 rows=3248.00 loops=1)
+        Output: certificate.student_id
+        Group Key: certificate.student_id
+        Batches: 1  Memory Usage: 233kB
+        Buffers: shared hit=205
+        ->  Merge Join  (cost=451.03..5935.99 rows=190560 width=4) (actual time=6.995..13.903 rows=3676.00 loops=1)
+              Output: certificate.student_id
+              Merge Cond: (cert_language.certificate_id = certificate.certificate_id)
+              Buffers: shared hit=205
+              ->  Merge Append  (cost=250.16..825.77 rows=3176 width=4) (actual time=2.505..3.732 rows=3676.00 loops=1)
+                    Sort Key: cert_language.certificate_id
+                    Buffers: shared hit=34
+                    ->  Index Scan using cert_language_pkey on public.cert_language  (cost=0.28..121.66 rows=1601 width=4) (actual time=0.026..0.714 rows=1848.00 loops=1)
+                          Output: cert_language.certificate_id
+                          Filter: ((cert_language.overall >= 6.5) AND (cert_language.speaking >= 6.0))
+                          Rows Removed by Filter: 871
+                          Index Searches: 1
+                          Buffers: shared hit=34
+                    ->  Foreign Scan on remote_b.cert_language cert_language_1  (cost=100.28..392.75 rows=1007 width=4) (actual time=1.374..1.561 rows=1170.00 loops=1)
+                          Output: cert_language_1.certificate_id
+                          Remote SQL: SELECT certificate_id FROM public.cert_language WHERE ((overall >= 6.5)) AND ((speaking >= 6.0)) ORDER BY certificate_id ASC NULLS LAST
+                    ->  Foreign Scan on remote_c.cert_language cert_language_2  (cost=149.58..270.28 rows=568 width=4) (actual time=1.103..1.159 rows=658.00 loops=1)
+                          Output: cert_language_2.certificate_id
+                          Remote SQL: SELECT certificate_id FROM public.cert_language WHERE ((overall >= 6.5)) AND ((speaking >= 6.0)) ORDER BY certificate_id ASC NULLS LAST
+              ->  Materialize  (cost=200.87..2273.88 rows=12000 width=8) (actual time=4.479..8.798 rows=12000.00 loops=1)
+                    Output: certificate.student_id, certificate.certificate_id
+                    Storage: Memory  Maximum Storage: 17kB
+                    Buffers: shared hit=171
+                    ->  Merge Append  (cost=200.87..2243.88 rows=12000 width=8) (actual time=4.476..6.961 rows=12000.00 loops=1)
+                          Sort Key: certificate.certificate_id
+                          Buffers: shared hit=171
+                          ->  Index Scan using certificate_pkey on public.certificate  (cost=0.28..321.26 rows=6085 width=8) (actual time=0.016..1.116 rows=6085.00 loops=1)
+                                Output: certificate.student_id, certificate.certificate_id
+                                Index Searches: 1
+                                Buffers: shared hit=171
+                          ->  Foreign Scan on remote_b.certificate certificate_1  (cost=100.28..1117.49 rows=3854 width=8) (actual time=2.628..2.911 rows=3854.00 loops=1)
+                                Output: certificate_1.student_id, certificate_1.certificate_id
+                                Remote SQL: SELECT certificate_id, student_id FROM public.certificate ORDER BY certificate_id ASC NULLS LAST
+                          ->  Foreign Scan on remote_c.certificate certificate_2  (cost=100.28..650.01 rows=2061 width=8) (actual time=1.830..1.986 rows=2061.00 loops=1)
+                                Output: certificate_2.student_id, certificate_2.certificate_id
+                                Remote SQL: SELECT certificate_id, student_id FROM public.certificate ORDER BY certificate_id ASC NULLS LAST
+Planning:
+  Buffers: shared hit=92
+Planning Time: 7.198 ms
+Execution Time: 16.819 ms

@@ -1,0 +1,43 @@
+-- Q5_opt
+-- SELECT * FROM (SELECT c.student_id FROM certificate c JOIN cert_language l USING(certificate_id) WHERE l.overall>=6.5 AND l.speaking>=6.0 UNION SELECT c.student_id FROM remote_b.certificate c JOIN remote_b.cert_language l USING(certificate_id) WHERE l.overall>=6.5 AND l.speaking>=6.0 UNION SELECT c.student_id FROM remote_c.certificate c JOIN remote_c.cert_language l USING(certificate_id) WHERE l.overall>=6.5 AND l.speaking>=6.0) t ORDER BY 1
+
+Unique  (cost=978.27..1365.95 rows=3176 width=4) (actual time=9.713..11.201 rows=3248.00 loops=1)
+  Output: c.student_id
+  Buffers: shared hit=174
+  ->  Merge Append  (cost=978.27..1358.01 rows=3176 width=4) (actual time=9.711..10.521 rows=3676.00 loops=1)
+        Sort Key: c.student_id
+        Buffers: shared hit=174
+        ->  Sort  (cost=396.84..400.85 rows=1601 width=4) (actual time=1.444..1.588 rows=1848.00 loops=1)
+              Output: c.student_id
+              Sort Key: c.student_id
+              Sort Method: quicksort  Memory: 49kB
+              Buffers: shared hit=174
+              ->  Hash Join  (cost=84.80..311.63 rows=1601 width=4) (actual time=0.513..1.288 rows=1848.00 loops=1)
+                    Output: c.student_id
+                    Inner Unique: true
+                    Hash Cond: (c.certificate_id = l.certificate_id)
+                    Buffers: shared hit=174
+                    ->  Seq Scan on public.certificate c  (cost=0.00..210.85 rows=6085 width=8) (actual time=0.009..0.251 rows=6085.00 loops=1)
+                          Output: c.certificate_id, c.student_id, c.cert_type, c.issued_date, c.detail
+                          Buffers: shared hit=150
+                    ->  Hash  (cost=64.78..64.78 rows=1601 width=4) (actual time=0.499..0.501 rows=1848.00 loops=1)
+                          Output: l.certificate_id
+                          Buckets: 2048  Batches: 1  Memory Usage: 81kB
+                          Buffers: shared hit=24
+                          ->  Seq Scan on public.cert_language l  (cost=0.00..64.78 rows=1601 width=4) (actual time=0.005..0.365 rows=1848.00 loops=1)
+                                Output: l.certificate_id
+                                Filter: ((l.overall >= 6.5) AND (l.speaking >= 6.0))
+                                Rows Removed by Filter: 871
+                                Buffers: shared hit=24
+        ->  Foreign Scan  (cost=347.69..561.68 rows=1007 width=4) (actual time=4.794..4.887 rows=1170.00 loops=1)
+              Output: c_1.student_id
+              Relations: (remote_b.certificate c_1) INNER JOIN (remote_b.cert_language l_1)
+              Remote SQL: SELECT r1.student_id FROM (public.certificate r1 INNER JOIN public.cert_language r2 ON (((r1.certificate_id = r2.certificate_id)) AND ((r2.overall >= 6.5)) AND ((r2.speaking >= 6.0)))) ORDER BY r1.student_id ASC NULLS LAST
+        ->  Foreign Scan  (cost=233.71..354.41 rows=568 width=4) (actual time=3.468..3.514 rows=658.00 loops=1)
+              Output: c_2.student_id
+              Relations: (remote_c.certificate c_2) INNER JOIN (remote_c.cert_language l_2)
+              Remote SQL: SELECT r1.student_id FROM (public.certificate r1 INNER JOIN public.cert_language r2 ON (((r1.certificate_id = r2.certificate_id)) AND ((r2.overall >= 6.5)) AND ((r2.speaking >= 6.0)))) ORDER BY r1.student_id ASC NULLS LAST
+Planning:
+  Buffers: shared hit=30
+Planning Time: 7.735 ms
+Execution Time: 12.173 ms

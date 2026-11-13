@@ -39,6 +39,13 @@ services:
       - ./data:/data:ro
       - ./sql:/sql:ro
 
+  # Proxy độ trễ đứng giữa trạm trung tâm và các trạm xa (postgres_fdw đi qua đây).
+  # scripts/delay.sh on|off thêm/bỏ độ trễ; chạy cùng máy với campus_a.
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    profiles: ["A", "all"]
+    ports: ["8474:8474"]
+
 volumes:
   a_data:
   b_data:

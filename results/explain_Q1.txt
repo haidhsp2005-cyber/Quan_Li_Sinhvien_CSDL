@@ -1,0 +1,39 @@
+-- Q1
+-- SELECT s.major_code, round(avg(e.total),2) FROM student s JOIN enrollment e USING(student_id) WHERE s.home_campus='campus_a' AND e.semester='2025-2' GROUP BY 1 ORDER BY 1
+
+Sort  (cost=1407.71..1407.72 rows=6 width=37) (actual time=9.054..9.058 rows=6.00 loops=1)
+  Output: s.major_code, (round(avg(e.total), 2))
+  Sort Key: s.major_code
+  Sort Method: quicksort  Memory: 25kB
+  Buffers: shared hit=591
+  ->  HashAggregate  (cost=1407.54..1407.63 rows=6 width=37) (actual time=9.029..9.035 rows=6.00 loops=1)
+        Output: s.major_code, round(avg(e.total), 2)
+        Group Key: s.major_code
+        Batches: 1  Memory Usage: 32kB
+        Buffers: shared hit=588
+        ->  Hash Join  (cost=481.38..1306.64 rows=20180 width=11) (actual time=1.662..6.428 rows=20275.00 loops=1)
+              Output: s.major_code, e.total
+              Inner Unique: true
+              Hash Cond: (e.student_id = s.student_id)
+              Buffers: shared hit=588
+              ->  Bitmap Heap Scan on public.enrollment e  (cost=224.68..996.93 rows=20180 width=10) (actual time=0.408..2.421 rows=20275.00 loops=1)
+                    Output: e.enrollment_id, e.student_id, e.section_id, e.semester, e.midterm, e.final, e.total
+                    Recheck Cond: (e.semester = '2025-2'::text)
+                    Heap Blocks: exact=503
+                    Buffers: shared hit=520
+                    ->  Bitmap Index Scan on enrollment_sem_idx  (cost=0.00..219.64 rows=20180 width=0) (actual time=0.366..0.366 rows=20275.00 loops=1)
+                          Index Cond: (e.semester = '2025-2'::text)
+                          Index Searches: 1
+                          Buffers: shared hit=17
+              ->  Hash  (cost=162.35..162.35 rows=7548 width=9) (actual time=1.232..1.232 rows=7548.00 loops=1)
+                    Output: s.major_code, s.student_id
+                    Buckets: 8192  Batches: 1  Memory Usage: 389kB
+                    Buffers: shared hit=68
+                    ->  Seq Scan on public.student s  (cost=0.00..162.35 rows=7548 width=9) (actual time=0.009..0.613 rows=7548.00 loops=1)
+                          Output: s.major_code, s.student_id
+                          Filter: (s.home_campus = 'campus_a'::text)
+                          Buffers: shared hit=68
+Planning:
+  Buffers: shared hit=267
+Planning Time: 0.487 ms
+Execution Time: 9.120 ms

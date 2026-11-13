@@ -1,0 +1,70 @@
+-- Q2_opt
+-- WITH pa AS (SELECT section_id, count(*) n, count(*) FILTER (WHERE total>=5) ok FROM enrollment WHERE semester='2025-2' GROUP BY section_id UNION ALL SELECT section_id, count(*) n, count(*) FILTER (WHERE total>=5) ok FROM remote_b.enrollment WHERE semester='2025-2' GROUP BY section_id UNION ALL SELECT section_id, count(*) n, count(*) FILTER (WHERE total>=5) ok FROM remote_c.enrollment WHERE semester='2025-2' GROUP BY section_id) SELECT sec.course_code, round(sum(ok)::numeric/sum(n),4) FROM pa JOIN all_section sec USING(section_id) GROUP BY 1 ORDER BY 1
+
+Sort  (cost=6007.90..6008.40 rows=200 width=51) (actual time=33.681..33.698 rows=232.00 loops=1)
+  Output: section.course_code, (round((sum("*SELECT* 1".ok) / sum("*SELECT* 1".n)), 4))
+  Sort Key: section.course_code
+  Sort Method: quicksort  Memory: 32kB
+  Buffers: shared hit=537
+  ->  HashAggregate  (cost=5996.25..6000.25 rows=200 width=51) (actual time=33.305..33.427 rows=232.00 loops=1)
+        Output: section.course_code, round((sum("*SELECT* 1".ok) / sum("*SELECT* 1".n)), 4)
+        Group Key: section.course_code
+        Batches: 1  Memory Usage: 112kB
+        Buffers: shared hit=537
+        ->  Merge Join  (cost=4009.82..5468.63 rows=70350 width=35) (actual time=30.998..32.702 rows=2062.00 loops=1)
+              Output: section.course_code, "*SELECT* 1".ok, "*SELECT* 1".n
+              Merge Cond: (section.section_id = "*SELECT* 1".section_id)
+              Buffers: shared hit=537
+              ->  Merge Append  (cost=227.87..625.18 rows=2500 width=9) (actual time=3.063..4.030 rows=2500.00 loops=1)
+                    Sort Key: section.section_id
+                    Buffers: shared hit=17
+                    ->  Index Scan using section_pkey on public.section  (cost=0.28..58.00 rows=1248 width=9) (actual time=0.016..0.410 rows=1248.00 loops=1)
+                          Output: section.course_code, section.section_id
+                          Index Searches: 1
+                          Buffers: shared hit=17
+                    ->  Foreign Scan on remote_b.section section_1  (cost=100.28..315.55 rows=819 width=9) (actual time=1.388..1.624 rows=819.00 loops=1)
+                          Output: section_1.course_code, section_1.section_id
+                          Remote SQL: SELECT section_id, course_code FROM public.section ORDER BY section_id ASC NULLS LAST
+                    ->  Foreign Scan on remote_c.section section_2  (cost=127.29..219.30 rows=433 width=9) (actual time=1.656..1.704 rows=433.00 loops=1)
+                          Output: section_2.course_code, section_2.section_id
+                          Remote SQL: SELECT section_id, course_code FROM public.section ORDER BY section_id ASC NULLS LAST
+              ->  Sort  (cost=3781.94..3796.01 rows=5628 width=20) (actual time=27.916..28.089 rows=2062.00 loops=1)
+                    Output: "*SELECT* 1".ok, "*SELECT* 1".n, "*SELECT* 1".section_id
+                    Sort Key: "*SELECT* 1".section_id
+                    Sort Method: quicksort  Memory: 177kB
+                    Buffers: shared hit=520
+                    ->  Append  (cost=1198.73..3431.37 rows=5628 width=20) (actual time=5.619..27.563 rows=2062.00 loops=1)
+                          Buffers: shared hit=520
+                          ->  Subquery Scan on "*SELECT* 1"  (cost=1198.73..1243.62 rows=2244 width=20) (actual time=5.617..5.754 rows=830.00 loops=1)
+                                Output: "*SELECT* 1".ok, "*SELECT* 1".n, "*SELECT* 1".section_id
+                                Buffers: shared hit=520
+                                ->  HashAggregate  (cost=1198.73..1221.17 rows=2244 width=20) (actual time=5.616..5.705 rows=830.00 loops=1)
+                                      Output: enrollment.section_id, count(*), count(*) FILTER (WHERE (enrollment.total >= '5'::numeric))
+                                      Group Key: enrollment.section_id
+                                      Batches: 1  Memory Usage: 153kB
+                                      Buffers: shared hit=520
+                                      ->  Bitmap Heap Scan on public.enrollment  (cost=224.68..996.93 rows=20180 width=10) (actual time=0.575..2.362 rows=20275.00 loops=1)
+                                            Output: enrollment.enrollment_id, enrollment.student_id, enrollment.section_id, enrollment.semester, enrollment.midterm, enrollment.final, enrollment.total
+                                            Recheck Cond: (enrollment.semester = '2025-2'::text)
+                                            Heap Blocks: exact=503
+                                            Buffers: shared hit=520
+                                            ->  Bitmap Index Scan on enrollment_sem_idx  (cost=0.00..219.64 rows=20180 width=0) (actual time=0.514..0.514 rows=20275.00 loops=1)
+                                                  Index Cond: (enrollment.semester = '2025-2'::text)
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=17
+                          ->  Subquery Scan on "*SELECT* 2"  (cost=855.35..1293.73 rows=1906 width=20) (actual time=12.724..12.799 rows=715.00 loops=1)
+                                Output: "*SELECT* 2".ok, "*SELECT* 2".n, "*SELECT* 2".section_id
+                                ->  Foreign Scan  (cost=855.35..1274.67 rows=1906 width=20) (actual time=12.721..12.751 rows=715.00 loops=1)
+                                      Output: enrollment_1.section_id, (count(*)), (count(*) FILTER (WHERE (enrollment_1.total >= '5'::numeric)))
+                                      Relations: Aggregate on (remote_b.enrollment enrollment_1)
+                                      Remote SQL: SELECT section_id, count(*), count(*) FILTER (WHERE (total >= 5::numeric)) FROM public.enrollment WHERE ((semester = '2025-2')) GROUP BY 1
+                          ->  Subquery Scan on "*SELECT* 3"  (cost=525.94..865.88 rows=1478 width=20) (actual time=8.814..8.892 rows=517.00 loops=1)
+                                Output: "*SELECT* 3".ok, "*SELECT* 3".n, "*SELECT* 3".section_id
+                                ->  Foreign Scan  (cost=525.94..851.10 rows=1478 width=20) (actual time=8.807..8.828 rows=517.00 loops=1)
+                                      Output: enrollment_2.section_id, (count(*)), (count(*) FILTER (WHERE (enrollment_2.total >= '5'::numeric)))
+                                      Relations: Aggregate on (remote_c.enrollment enrollment_2)
+                                      Remote SQL: SELECT section_id, count(*), count(*) FILTER (WHERE (total >= 5::numeric)) FROM public.enrollment WHERE ((semester = '2025-2')) GROUP BY 1
+Planning:
+  Buffers: shared hit=12
+Planning Time: 7.716 ms
+Execution Time: 35.598 ms

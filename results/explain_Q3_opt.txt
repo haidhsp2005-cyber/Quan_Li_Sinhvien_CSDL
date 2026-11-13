@@ -1,0 +1,40 @@
+-- Q3_opt
+-- SELECT * FROM (SELECT s.student_id, s.full_name FROM enrollment e JOIN student s USING(student_id) WHERE e.section_id=2 UNION ALL SELECT s.student_id, s.full_name FROM remote_b.enrollment e JOIN remote_b.student s USING(student_id) WHERE e.section_id=2 UNION ALL SELECT s.student_id, s.full_name FROM remote_c.enrollment e JOIN remote_c.student s USING(student_id) WHERE e.section_id=2) t ORDER BY 1,2
+
+Sort  (cost=756.24..756.38 rows=55 width=30) (actual time=1.890..1.895 rows=49.00 loops=1)
+  Output: s.student_id, s.full_name
+  Sort Key: s.student_id, s.full_name
+  Sort Method: quicksort  Memory: 27kB
+  Buffers: shared hit=6
+  ->  Append  (cost=4.77..754.65 rows=55 width=30) (actual time=0.026..1.881 rows=49.00 loops=1)
+        Buffers: shared hit=6
+        ->  Nested Loop  (cost=4.77..251.85 rows=25 width=22) (actual time=0.026..0.027 rows=1.00 loops=1)
+              Output: s.student_id, s.full_name
+              Inner Unique: true
+              Buffers: shared hit=6
+              ->  Bitmap Heap Scan on public.enrollment e  (cost=4.48..88.35 rows=25 width=4) (actual time=0.013..0.014 rows=1.00 loops=1)
+                    Output: e.enrollment_id, e.student_id, e.section_id, e.semester, e.midterm, e.final, e.total
+                    Recheck Cond: (e.section_id = 2)
+                    Heap Blocks: exact=1
+                    Buffers: shared hit=3
+                    ->  Bitmap Index Scan on enrollment_section_idx  (cost=0.00..4.48 rows=25 width=0) (actual time=0.006..0.006 rows=1.00 loops=1)
+                          Index Cond: (e.section_id = 2)
+                          Index Searches: 1
+                          Buffers: shared hit=2
+              ->  Index Scan using student_pkey on public.student s  (cost=0.28..6.54 rows=1 width=22) (actual time=0.010..0.010 rows=1.00 loops=1)
+                    Output: s.student_id, s.full_name, s.birth_year, s.major_code, s.home_campus, s.intake_year
+                    Index Cond: (s.student_id = e.student_id)
+                    Index Searches: 1
+                    Buffers: shared hit=3
+        ->  Foreign Scan  (cost=104.71..281.19 rows=18 width=22) (actual time=1.063..1.066 rows=47.00 loops=1)
+              Output: s_1.student_id, s_1.full_name
+              Relations: (remote_b.enrollment e_1) INNER JOIN (remote_b.student s_1)
+              Remote SQL: SELECT r2.student_id, r2.full_name FROM (public.enrollment r1 INNER JOIN public.student r2 ON (((r1.student_id = r2.student_id)) AND ((r1.section_id = 2))))
+        ->  Foreign Scan  (cost=104.66..221.33 rows=12 width=22) (actual time=0.782..0.782 rows=1.00 loops=1)
+              Output: s_2.student_id, s_2.full_name
+              Relations: (remote_c.enrollment e_2) INNER JOIN (remote_c.student s_2)
+              Remote SQL: SELECT r2.student_id, r2.full_name FROM (public.enrollment r1 INNER JOIN public.student r2 ON (((r1.student_id = r2.student_id)) AND ((r1.section_id = 2))))
+Planning:
+  Buffers: shared hit=18
+Planning Time: 5.484 ms
+Execution Time: 2.381 ms

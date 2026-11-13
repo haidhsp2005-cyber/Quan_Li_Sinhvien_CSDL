@@ -1,0 +1,56 @@
+-- Q2
+-- SELECT sec.course_code, round(count(*) FILTER (WHERE e.total>=5)::numeric/count(*),4) FROM all_enrollment e JOIN all_section sec USING(section_id) WHERE e.semester='2025-2' GROUP BY 1 ORDER BY 1
+
+Sort  (cost=22765.69..22766.19 rows=200 width=51) (actual time=55.600..55.611 rows=232.00 loops=1)
+  Output: section.course_code, (round(((count(*) FILTER (WHERE (enrollment.total >= '5'::numeric)))::numeric / (count(*))::numeric), 4))
+  Sort Key: section.course_code
+  Sort Method: quicksort  Memory: 32kB
+  Buffers: shared hit=537
+  ->  HashAggregate  (cost=22754.04..22758.04 rows=200 width=51) (actual time=55.405..55.465 rows=232.00 loops=1)
+        Output: section.course_code, round(((count(*) FILTER (WHERE (enrollment.total >= '5'::numeric)))::numeric / (count(*))::numeric), 4)
+        Group Key: section.course_code
+        Batches: 1  Memory Usage: 56kB
+        Buffers: shared hit=537
+        ->  Merge Join  (cost=9838.61..17749.29 rows=500475 width=38) (actual time=36.118..46.235 rows=40185.00 loops=1)
+              Output: section.course_code, enrollment.total
+              Merge Cond: (section.section_id = enrollment.section_id)
+              Buffers: shared hit=537
+              ->  Merge Append  (cost=227.87..625.18 rows=2500 width=9) (actual time=2.107..2.870 rows=2500.00 loops=1)
+                    Sort Key: section.section_id
+                    Buffers: shared hit=17
+                    ->  Index Scan using section_pkey on public.section  (cost=0.28..58.00 rows=1248 width=9) (actual time=0.023..0.375 rows=1248.00 loops=1)
+                          Output: section.course_code, section.section_id
+                          Index Searches: 1
+                          Buffers: shared hit=17
+                    ->  Foreign Scan on remote_b.section section_1  (cost=100.28..315.55 rows=819 width=9) (actual time=1.187..1.295 rows=819.00 loops=1)
+                          Output: section_1.course_code, section_1.section_id
+                          Remote SQL: SELECT section_id, course_code FROM public.section ORDER BY section_id ASC NULLS LAST
+                    ->  Foreign Scan on remote_c.section section_2  (cost=127.29..219.30 rows=433 width=9) (actual time=0.895..0.950 rows=433.00 loops=1)
+                          Output: section_2.course_code, section_2.section_id
+                          Remote SQL: SELECT section_id, course_code FROM public.section ORDER BY section_id ASC NULLS LAST
+              ->  Sort  (cost=9610.74..9710.83 rows=40038 width=10) (actual time=33.987..37.808 rows=40185.00 loops=1)
+                    Output: enrollment.total, enrollment.section_id
+                    Sort Key: enrollment.section_id
+                    Sort Method: quicksort  Memory: 2792kB
+                    Buffers: shared hit=520
+                    ->  Append  (cost=224.68..6550.02 rows=40038 width=10) (actual time=0.422..26.755 rows=40185.00 loops=1)
+                          Buffers: shared hit=520
+                          ->  Bitmap Heap Scan on public.enrollment  (cost=224.68..996.93 rows=20180 width=10) (actual time=0.421..2.675 rows=20275.00 loops=1)
+                                Output: enrollment.total, enrollment.section_id
+                                Recheck Cond: (enrollment.semester = '2025-2'::text)
+                                Heap Blocks: exact=503
+                                Buffers: shared hit=520
+                                ->  Bitmap Index Scan on enrollment_sem_idx  (cost=0.00..219.64 rows=20180 width=0) (actual time=0.374..0.374 rows=20275.00 loops=1)
+                                      Index Cond: (enrollment.semester = '2025-2'::text)
+                                      Index Searches: 1
+                                      Buffers: shared hit=17
+                          ->  Foreign Scan on remote_b.enrollment enrollment_1  (cost=242.43..3387.95 rows=12663 width=10) (actual time=9.954..14.185 rows=12715.00 loops=1)
+                                Output: enrollment_1.total, enrollment_1.section_id
+                                Remote SQL: SELECT section_id, total FROM public.enrollment WHERE ((semester = '2025-2'))
+                          ->  Foreign Scan on remote_c.enrollment enrollment_2  (cost=184.05..1964.94 rows=7195 width=10) (actual time=6.624..7.514 rows=7195.00 loops=1)
+                                Output: enrollment_2.total, enrollment_2.section_id
+                                Remote SQL: SELECT section_id, total FROM public.enrollment WHERE ((semester = '2025-2'))
+Planning:
+  Buffers: shared hit=154
+Planning Time: 31.906 ms
+Execution Time: 58.977 ms

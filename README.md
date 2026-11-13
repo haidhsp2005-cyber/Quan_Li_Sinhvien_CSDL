@@ -16,7 +16,7 @@ Thiết kế phân tán và lập luận: [docs/PLAN.md](docs/PLAN.md).
 | Giao diện nhập liệu (`app/entry.py`) | Xong, đã thử trên 1 máy: sinh viên, đăng ký (kể cả liên vùng), chứng chỉ jsonb (một giao dịch), thêm ngẫu nhiên N dòng, báo lỗi khi trạm mất kết nối |
 | Dashboard (`app/dash.py`) | Xong, đã thử trên 1 máy: ô từng trạm, tổng hợp so với đối chứng, nhật ký sự kiện, làm mới 2 giây. Chưa kiểm hết nhật ký lúc tắt/bật trạm |
 | `make check` đầy đủ (3 quy tắc, PK/FK, CHECK, jsonb, Q1–Q5) | Xong, đã thử: toàn PASS; cố ý phá dữ liệu (trùng PK, lớp mồ côi) thì báo FAIL đúng chỗ |
-| `bench`, `delay-on/off` | **Chưa** |
+| `bench`, `delay-on/off` | Xong, đã chạy trên 1 máy (chưa có số "trạm máy B"); xem docs/KET_QUA_N1_N5.md |
 
 ## Yêu cầu
 
@@ -87,3 +87,12 @@ docs/PLAN.md              thiết kế phân tán và kế hoạch
 ## Công cụ AI
 
 Mã và tài liệu được viết có hỗ trợ Claude (Anthropic); thành viên nhóm đọc và chịu trách nhiệm về toàn bộ hệ.
+
+## Đo hiệu năng và độ trễ
+
+| Lệnh | Việc làm |
+|---|---|
+| `make delay-on` / `make delay-off` | Bật/tắt trễ 30 ms khứ hồi giữa trạm trung tâm và các trạm xa (toxiproxy; `postgres_fdw` đi qua proxy :15433/:15434 nên `make link` tạo proxy trước) |
+| `make bench` | Đo Q1–Q5 (5 lần, bỏ lần đầu, trung vị) không trễ và có trễ, thu số liệu N1–N5 → `results/results.csv`, `results/explain_*.txt`, `results/summary.md`, `results/metrics.json` |
+
+Giải thích N1–N5 (nháp báo cáo): [docs/KET_QUA_N1_N5.md](docs/KET_QUA_N1_N5.md). Nên chạy `make data` để về dữ liệu sạch trước khi đo. Hiện mới đo trên 1 máy.
